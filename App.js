@@ -1,12 +1,10 @@
 import React, { Component } from 'react';
 import { Alert, StyleSheet, View, Button, DrawerLayoutAndroidBase } from 'react-native';
-//import { SQLite } from 'expo-sqlite';
-import * as SQLite from 'expo-sqlite';
 
+import Firebase from './js/Firebase';
 import Quote from './js/components/Quote';
 import NewQuote from './js/components/NewQuote';
 
-const database = SQLite.openDatabase('quotes.db');
 
 function StyledButton(props) {
   if (props.visible)
@@ -25,31 +23,15 @@ export default class App extends Component {
   state = { index: 0, showNewQuoteScreen: false, quotes: [] };
 
   _retrieveData() {
-    database.transaction(transaction =>
-      transaction.executeSql(
-        'SELECT * FROM quotes',
-        [],
-        (_, result) => this.setState({ quotes: result.rows._array })
-      ))
+    //FB
   }
 
   _saveQuoteToDB(text, author, quotes) {
-    database.transaction(
-      transaction => transaction.executeSql(
-        'INSERT INTO quotes (text, author) VALUES (?,?)',
-        [text, author],
-        (_, result) => (quotes[quotes.length - 1].id = result.insertId)
-      )
-    )
+    Firebase.db.collection('quotes').add({ text, author });
   }
 
   _removeQuoteFromDB(id) {
-    database.transaction(
-      transaction => transaction.executeSql(
-        'DELETE FROM quotes WHERE id = ?',
-        [id]
-      )
-    )
+    //FB
   }
 
   _addQuote = (text, author) => {
@@ -97,11 +79,7 @@ export default class App extends Component {
   }
 
   componentDidMount() {
-    database.transaction(transaction =>
-      transaction.executeSql(
-        'CREATE TABLE IF NOT EXISTS quotes (id INTEGER PRIMARY KEY NOT NULL, text TEXT, author TEXT);'
-      )
-    );
+    Firebase.init();
     this._retrieveData();
   }
 
