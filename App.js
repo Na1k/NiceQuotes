@@ -1,13 +1,10 @@
 import React, { Component } from 'react';
-import { Alert, StyleSheet, View, Button, DrawerLayoutAndroidBase } from 'react-native';
+import { ActivityIndicator, Alert, StyleSheet, View, Button, DrawerLayoutAndroidBase } from 'react-native';
 
 import Quote from './js/components/Quote';
 import NewQuote from './js/components/NewQuote';
 
-import * as firebase from 'firebase';
-import { firebaseConfig } from './js/Firebase';
-
-
+import Firebase from './js/Firebase';
 
 function StyledButton(props) {
   if (props.visible)
@@ -23,22 +20,28 @@ function StyledButton(props) {
 }
 
 export default class App extends Component {
-  state = { index: 0, showNewQuoteScreen: false, quotes: [] };
+  state = { index: 0, showNewQuoteScreen: false, quotes: [], isLoading: true };
 
-  _retrieveData() {
-    //FB
-  }
-
-  _saveQuoteToDB(text, author, quotes) {
-    firebase.database().ref('quotes').push({
-      text,
-      author
+  _retrieveData = async () => {
+    let quotes = [];
+    let query = await Firebase.db.collection('quotes').get();
+    query.forEach(quote => {
+      quotes.push({
+        id: quote.id,
+        text: quote.data().text,
+        author: quote.data().author
+      });
     });
-
+    this.setState({ quotes, isLoading: false });
   }
+
+  _saveQuoteToDB = async (text, author, quotes) => {
+    docRef = await Firebase.db.collection('quotes').add({ text, author });
+    quotes[quotes.length - 1].id = docRef.id;
+  };
 
   _removeQuoteFromDB(id) {
-    //FB
+    Firebase.db.collection('quotes').doc(id).delete();
   }
 
   _addQuote = (text, author) => {
@@ -86,13 +89,18 @@ export default class App extends Component {
   }
 
   componentDidMount() {
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-    }
+    Firebase.init();
     this._retrieveData();
   }
 
   render() {
+    if (this.state.isLoading) {
+      return (
+        <View style={styles.container}>
+          <ActivityIndicator size="large" color="blue" />
+        </View>
+      );
+    }
     let { index, quotes } = this.state;
     const quote = quotes[index];
     let content = <Quote text="Keine Zitate. Beginne indem du auf 'Neues Zitat' drückst." author="Entwickler" />
