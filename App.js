@@ -1,9 +1,12 @@
 import React, { Component } from 'react';
 import { Alert, StyleSheet, View, Button, DrawerLayoutAndroidBase } from 'react-native';
 
-import Firebase from './js/Firebase';
 import Quote from './js/components/Quote';
 import NewQuote from './js/components/NewQuote';
+
+import * as firebase from 'firebase';
+import { firebaseConfig } from './js/Firebase';
+
 
 
 function StyledButton(props) {
@@ -27,7 +30,11 @@ export default class App extends Component {
   }
 
   _saveQuoteToDB(text, author, quotes) {
-    Firebase.db.collection('quotes').add({ text, author });
+    firebase.database().ref('quotes').push({
+      text,
+      author
+    });
+
   }
 
   _removeQuoteFromDB(id) {
@@ -79,7 +86,9 @@ export default class App extends Component {
   }
 
   componentDidMount() {
-    Firebase.init();
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
     this._retrieveData();
   }
 
